@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 // NOTE: Implementation intentionally not written yet (TDD). These tests should fail initially.
 // The implementation is expected to export an `add` function from `stringCalculator.ts`.
-// import { add } from "./stringCalculator";
+import { add } from "./stringCalculator";
 
 /**
  * String Calculator - TDD Test Suite
@@ -16,7 +16,7 @@ import { describe, it, expect } from "vitest";
  *
  * Edge-case notes:
  * - Whitespace is not explicitly specified as allowed, so inputs are assumed to be clean.
- * - Inputs are assumed to be valid numbers where present (aside from negativity), per classic kata scope.
+ * - Inputs are assumed to be valid numbers.
  */
 
 describe("String Calculator", () => {
