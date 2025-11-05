@@ -9,47 +9,67 @@
  */
 
 export function add(input: string): number {
-  if (input === "") {
-    return 0;
-  }
+  // Fast path for empty input per requirements
+  if (input === "") return 0;
 
-  const { delimiter, numbersSection } = parseHeader(input);
+  const { delimiters, numbersSection } = parseInput(input);
+  const tokens = tokenize(numbersSection, delimiters);
+  const values = toNumbers(tokens);
 
-  const separators = delimiter ? [delimiter, "\n"] : [",", "\n"];
-  const tokens = splitByDelimiters(numbersSection, separators);
-
-  const values: number[] = tokens
-    .filter((t) => t.length > 0)
-    .map((t) => Number(t))
-    .filter((n) => !Number.isNaN(n));
-
-  const negatives = values.filter((n) => n < 0);
-  if (negatives.length > 0) {
-    throw new Error(`Negatives not allowed: ${negatives.join(", ")}`);
-  }
-
-  return values.reduce((sum, n) => sum + n, 0);
+  validateNoNegatives(values);
+  return sum(values);
 }
 
-function parseHeader(input: string): {
-  delimiter: string | null;
+/**
+ * Parses the optional custom delimiter header and returns the delimiters and
+ * the numbers section to be processed further.
+ */
+function parseInput(input: string): {
+  delimiters: string[];
   numbersSection: string;
 } {
   if (input.startsWith("//")) {
     const newlineIndex = input.indexOf("\n");
     if (newlineIndex > 2) {
-      const delimiter = input.slice(2, newlineIndex);
-      const numbersSection = input.slice(newlineIndex + 1);
-      return { delimiter, numbersSection };
+      const customDelimiter = input.slice(2, newlineIndex);
+      return {
+        delimiters: [customDelimiter, "\n"],
+        numbersSection: input.slice(newlineIndex + 1),
+      };
     }
   }
-  return { delimiter: null, numbersSection: input };
+
+  return { delimiters: [",", "\n"], numbersSection: input };
 }
 
-function splitByDelimiters(input: string, delimiters: string[]): string[] {
+/**
+ * Splits the input by any of the provided delimiters. Empty tokens are preserved
+ * for now and handled in number parsing.
+ */
+function tokenize(input: string, delimiters: string[]): string[] {
   const escaped = delimiters.map(escapeRegExp);
   const pattern = new RegExp(`(?:${escaped.join("|")})`, "g");
   return input.split(pattern);
+}
+
+/** Converts tokens to numbers, skipping empty tokens and non-numeric values. */
+function toNumbers(tokens: string[]): number[] {
+  return tokens
+    .filter((token) => token.length > 0)
+    .map((token) => Number(token))
+    .filter((value) => !Number.isNaN(value));
+}
+
+/** Ensures there are no negative numbers; throws with a detailed message if any. */
+function validateNoNegatives(values: number[]): void {
+  const negatives = values.filter((value) => value < 0);
+  if (negatives.length === 0) return;
+  throw new Error(`Negatives not allowed: ${negatives.join(", ")}`);
+}
+
+/** Adds all numbers together. */
+function sum(values: number[]): number {
+  return values.reduce((accumulator, value) => accumulator + value, 0);
 }
 
 function escapeRegExp(text: string): string {
